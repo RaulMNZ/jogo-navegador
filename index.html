@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Shadow Blade: Kage's Revenge</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #080308;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            background: #0d0614;
+            box-shadow: 0 0 35px rgba(255, 30, 80, 0.25);
+        }
+
+        /* Overlay Interface Base */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 5, 16, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 3.2rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #ff2a55;
+            text-shadow: 0 0 12px #ff2a55, 0 0 25px #ff2a55, 0 0 50px #8800ff;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: #ffaa00;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px #ffaa00;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff2a55, #9900ff);
+            border: none;
+            color: white;
+            padding: 14px 38px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 42, 85, 0.5);
+            transition: all 0.2s ease;
+            margin: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 0 25px rgba(255, 42, 85, 0.8), 0 0 12px #ffaa00;
+            background: linear-gradient(135deg, #ffaa00, #ff2a55);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .instructions-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 42, 85, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 580px;
+            width: 90%;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #d8ceea;
+        }
+
+        .instructions-box h3 {
+            color: #ff2a55;
+            border-bottom: 1px solid rgba(255, 42, 85, 0.3);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-badge {
+            background: rgba(255, 42, 85, 0.1);
+            border: 1px solid #ff2a55;
+            padding: 10px 22px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-badge .lbl {
+            font-size: 0.75rem;
+            color: #aaa0c0;
+            text-transform: uppercase;
+        }
+
+        .stat-badge .val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 8px #ff2a55;
+        }
+
+        /* Loja de Upgrades */
+        .shop-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+            width: 90%;
+            margin-top: 15px;
+        }
+
+        .shop-card {
+            background: rgba(20, 10, 30, 0.9);
+            border: 2px solid #9900ff;
+            border-radius: 8px;
+            padding: 16px;
+            width: 230px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 0 12px rgba(153, 0, 255, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .shop-card:hover {
+            border-color: #ffaa00;
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+        }
+
+        .shop-card .icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .shop-card .title {
+            font-weight: bold;
+            color: #ffaa00;
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+        }
+
+        .shop-card .desc {
+            font-size: 0.8rem;
+            color: #b0a0cc;
+            margin-bottom: 12px;
+            flex-grow: 1;
+        }
+
+        .shop-card .price {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #ff2a55;
+            margin-bottom: 8px;
+        }
+
+        /* HUD Overlay */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 5;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .bar-wrap {
+            width: 220px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 6px;
+        }
+
+        .bar-fill {
+            height: 12px;
+            border-radius: 6px;
+            transition: width 0.15s ease;
+        }
+
+        #hp-fill { background: linear-gradient(90deg, #ff2a55, #ff0000); box-shadow: 0 0 8px #ff2a55; }
+        #mana-fill { background: linear-gradient(90deg, #00d2ff, #0066ff); box-shadow: 0 0 8px #00d2ff; }
+
+        .hud-lbl {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #d8ceea;
+            margin-bottom: 2px;
+            text-shadow: 0 0 4px #000;
+        }
+
+        .hud-right {
+            text-align: right;
+        }
+
+        .souls-display {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+        }
+
+        .stage-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ff2a55;
+            text-shadow: 0 0 8px #ff2a55;
+        }
+
+        #boss-hud {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 550px;
+            text-align: center;
+        }
+
+        #boss-name {
+            color: #ff2a55;
+            font-weight: bold;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            text-shadow: 0 0 8px #ff2a55;
+        }
+
+        /* Mobile Controls Overlay */
+        #mobile-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            height: 140px;
+            display: none;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .m-btn-group {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+            align-items: flex-end;
+        }
+
+        .m-btn {
+            width: 58px;
+            height: 58px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 42, 85, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .m-btn:active {
+            background: rgba(255, 42, 85, 0.4);
+            transform: scale(0.92);
+        }
+
+        @media (max-width: 800px) {
+            h1 { font-size: 2.1rem; }
+            #mobile-controls { display: flex; }
+            .bar-wrap { width: 150px; }
+            .shop-card { width: 100%; max-width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="canvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud" class="hidden">
+        <div class="hud-top">
+            <div>
+                <div class="hud-lbl">Vida do Shinobi</div>
+                <div class="bar-wrap">
+                    <div id="hp-fill" class="bar-fill" style="width: 100%;"></div>
+                </div>
+
+                <div class="hud-lbl">Energia Arcana (Mana)</div>
+                <div class="bar-wrap">
+                    <div id="mana-fill" class="bar-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="hud-right">
+                <div class="souls-display" id="hud-souls">🔮 0</div>
+                <div class="stage-display" id="hud-stage">FASE 1</div>
+            </div>
+        </div>
+
+        <div id="boss-hud" class="hidden">
+            <div id="boss-name">LORDE DEMÔNIO - ABYSSAL</div>
+            <div class="bar-wrap" style="width: 100%;">
+                <div id="boss-hp-fill" class="bar-fill" style="width: 100%; background: linear-gradient(90deg, #ff0055, #9900ff);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles Touch para Mobile -->
+    <div id="mobile-controls">
+        <div class="m-btn-group">
+            <div class="m-btn" id="mb-left">◄</div>
+            <div class="m-btn" id="mb-right">►</div>
+        </div>
+        <div class="m-btn-group">
+            <div class="m-btn" id="mb-dash" style="border-color: #00d2ff;">💨</div>
+            <div class="m-btn" id="mb-attack" style="border-color: #ffaa00;">⚔️</div>
+            <div class="m-btn" id="mb-jump" style="border-color: #ff2a55;">⬆️</div>
+            <div class="m-btn" id="mb-magic" style="border-color: #9900ff;">🔥</div>
+        </div>
+    </div>
+
+    <!-- Tela Inicial / Menu -->
+    <div id="screen-main" class="overlay">
+        <h1>SHADOW BLADE</h1>
+        <p class="subtitle">KAGE'S REVENGE</p>
+
+        <div class="instructions-box">
+            <h3>CONTROLES & COMBATE</h3>
+            <p><strong>[Mover]:</strong> A / D ou Setas | <strong>[Pular]:</strong> Espaço / W (Pulo Duplo!)</p>
+            <p><strong>[Atacar]:</strong> J ou Clique Esquerdo | <strong>[Dash Esquiva]:</strong> K ou Shift</p>
+            <p><strong>[Shuriken]:</strong> L ou Clique Direito | <strong>[Dragão de Fogo]:</strong> E / I</p>
+            <p style="margin-top: 8px;">• Use o <b>Dash</b> para atravessar inimigos e projéteis sem tomar dano!</p>
+            <p>• Colete <b>Almas Obscuras</b> de inimigos para evoluir seu Shinobi na loja.</p>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-badge">
+                <div class="lbl">Recorde de Almas</div>
+                <div class="val" id="menu-bestsouls">0</div>
+            </div>
+            <div class="stat-badge">
+                <div class="lbl">Melhor Fase</div>
+                <div class="val" id="menu-beststage">1</div>
+            </div>
+        </div>
+
+        <button class="btn" id="btn-start">INICIAR JORNADA</button>
+    </div>
+
+    <!-- Tela de Intermissão / Loja de Upgrades -->
+    <div id="screen-shop" class="overlay hidden">
+        <h1 style="font-size: 2.2rem; color: #ffaa00; text-shadow: 0 0 15px #ffaa00;">SANTUÁRIO SHINOBI</h1>
+        <p class="subtitle" style="color: #fff; margin-bottom: 10px;">Gaste suas Almas Obscuras (<span id="shop-souls-count">0</span>):</p>
+
+        <div class="shop-container" id="shop-cards-list"></div>
+
+        <button class="btn" id="btn-next-stage" style="margin-top: 25px;">AVANÇAR DE FASE ►</button>
+    </div>
+
+    <!-- Tela de Pausa -->
+    <div id="screen-pause" class="overlay hidden">
+        <h1>JOGO PAUSADO</h1>
+        <button class="btn" id="btn-resume">CONTINUAR</button>
+        <button class="btn" id="btn-restart-pause" style="background: linear-gradient(135deg, #444, #666);">REINICIAR JORNADA</button>
+    </div>
+
+    <!-- Tela de Game Over -->
+    <div id="screen-gameover" class="overlay hidden">
+        <h1 style="color: #ff2a55;">ALMA DESTRUÍDA</h1>
+        <p class="subtitle">SUA VINGANÇA FOI INTERROMPIDA</p>
+
+        <div class="stats-row">
+            <div class="stat-badge">
+                <div class="lbl">Fase Alcançada</div>
+                <div class="val" id="go-stage">1</div>
+            </div>
+            <div class="stat-badge">
+                <div class="lbl">Inimigos Derrotados</div>
+                <div class="val" id="go-kills">0</div>
+            </div>
+        </div>
+
+        <button class="btn" id="btn-restart">TENTAR NOVAMENTE</button>
+    </div>
+
+    <!-- Tela de Vitória -->
+    <div id="screen-victory" class="overlay hidden">
+        <h1 style="color: #ffaa00; text-shadow: 0 0 20px #ffaa00;">VINGANÇA CONCLUÍDA!</h1>
+        <p class="subtitle" style="color: #00d2ff;">VOCÊ DERROTOU O LORDE DEMÔNIO E LIBERTOU A TERA DAS SOMBRAS</p>
+        <button class="btn" id="btn-victory-restart">JOGAR NOVAMENTE</button>
+    </div>
+</div>
+
+<script>
+/**
+ * SHADOW BLADE: KAGE'S REVENGE
+ * Engine 2D completa em HTML5 Canvas + Web Audio API
+ */
+
+// --- SINTETIZADOR DE ÁUDIO WEB AUDIO API ---
+const AudioEngine = {
+    ctx: null,
+    enabled: true,
+
+    init() {
+        if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    },
+
+    playTone(freq, type, duration, vol = 0.1, slideFreq = null) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            if (slideFreq !== null) {
+                osc.frequency.exponentialRampToValueAtTime(Math.max(10, slideFreq), this.ctx.currentTime + duration);
+            }
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+    },
+
+    playNoise(duration, vol = 0.1) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+            const bufferSize = this.ctx.sampleRate * duration;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+            noise.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start();
+        } catch (e) {}
+    },
+
+    swordSlash() { 
+        this.playNoise(0.08, 0.12);
+        this.playTone(400, 'sawtooth', 0.08, 0.08, 100); 
+    },
+    dash() { this.playNoise(0.12, 0.15); },
+    jump() { this.playTone(200, 'sine', 0.12, 0.08, 450); },
+    hit() { this.playNoise(0.08, 0.15); this.playTone(120, 'square', 0.08, 0.1, 40); },
+    enemyDeath() { 
+        this.playNoise(0.2, 0.18); 
+        this.playTone(180, 'sawtooth', 0.2, 0.12, 30); 
+    },
+    soulPickup() { this.playTone(800, 'sine', 0.06, 0.05, 1400); },
+    shuriken() { this.playTone(700, 'triangle', 0.05, 0.06, 300); },
+    fireMagic() {
+        this.playNoise(0.3, 0.2);
+        this.playTone(300, 'sawtooth', 0.35, 0.15, 60);
+    },
+    bossRoar() { this.playTone(90, 'sawtooth', 0.5, 0.25, 40); }
+};
+
+// --- CONFIGURAÇÃO GLOBAL ---
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let width, height;
+let gameState = 'MENU'; // MENU, GAME, SHOP, PAUSE, GAME_OVER, VICTORY
+let lastTime = 0;
+let camera = { x: 0, y: 0, shakeX: 0, shakeY: 0, shakeDuration: 0, shakeIntensity: 0 };
+
+// Dados Persistentes
+let bestSouls = parseInt(localStorage.getItem('kage_bestsouls')) || 0;
+let bestStage = parseInt(localStorage.getItem('kage_beststage')) || 1;
+
+document.getElementById('menu-bestsouls').textContent = bestSouls;
+document.getElementById('menu-beststage').textContent = bestStage;
+
+// Entradas de Controle
+const keys = {};
+const mouse = { x: 0, y: 0, downLeft: false, downRight: false };
+
+// --- UPGRADES DA LOJA ---
+const UPGRADES = [
+    {
+        id: 'maxHp',
+        title: 'Força Vital',
+        desc: '+25 de Vida Máxima e cura total.',
+        icon: '❤️',
+        cost: 40,
+        apply: (p) => { p.maxHp += 25; p.hp = p.maxHp; }
+    },
+    {
+        id: 'katanaDmg',
+        title: 'Lâmina Forjada',
+        desc: '+20% de dano nos ataques de Katana.',
+        icon: '⚔️',
+        cost: 50,
+        apply: (p) => { p.katanaDamage *= 1.20; }
+    },
+    {
+        id: 'dashCooldown',
+        title: 'Passo das Sombras',
+        desc: 'Reduz o tempo de recarga do Dash em 25%.',
+        icon: '💨',
+        cost: 45,
+        apply: (p) => { p.dashCooldownMax *= 0.75; }
+    },
+    {
+        id: 'manaRegen',
+        title: 'Meditação Arcana',
+        desc: 'Aumenta a regeneração contínua de Mana.',
+        icon: '🌀',
+        cost: 35,
+        apply: (p) => { p.manaRegenRate += 4; }
+    }
+];
+
+// --- VARIÁVEIS DE JOGO ---
+let player;
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let soulsOrbs = [];
+let floatingTexts = [];
+let platforms = [];
+
+let stage = 1;
+let totalSouls = 0;
+let killsCount = 0;
+let gameTime = 0;
+let currentBoss = null;
+
+// --- ESTRUTURA DO MUNDO & PLATAFORMAS ---
+function generateLevel(stageNum) {
+    platforms = [];
+    enemies = [];
+    projectiles = [];
+    soulsOrbs = [];
+
+    const levelWidth = 3200 + stageNum * 400;
+    const groundY = height - 80;
+
+    // Chão Principal
+    platforms.push({ x: 0, y: groundY, w: levelWidth, h: 100, type: 'ground' });
+
+    // Plataformas flutuantes
+    for (let x = 300; x < levelWidth - 500; x += 220 + Math.random() * 120) {
+        const platY = groundY - (100 + Math.random() * 160);
+        const platW = 120 + Math.random() * 100;
+        platforms.push({ x: x, y: platY, w: platW, h: 20, type: 'floating' });
+    }
+
+    // Portal / Bandeira de Fim de Fase
+    platforms.push({ x: levelWidth - 200, y: groundY - 120, w: 40, h: 120, type: 'exit' });
+
+    // Inimigos Spawnados ao longo da fase
+    if (stageNum === 5) {
+        // Fase do Chefão
+        currentBoss = new Enemy(levelWidth - 600, groundY - 120, 'boss');
+        enemies.push(currentBoss);
+        document.getElementById('boss-hud').classList.remove('hidden');
+        AudioEngine.bossRoar();
+    } else {
+        document.getElementById('boss-hud').classList.add('hidden');
+        const enemyCount = 12 + stageNum * 5;
+        for (let i = 0; i < enemyCount; i++) {
+            const spawnX = 500 + (i / enemyCount) * (levelWidth - 900);
+            const r = Math.random();
+            let type = 'skeleton';
+            if (r > 0.75) type = 'shield';
+            else if (r > 0.50) type = 'archer';
+            else if (r > 0.30) type = 'gargoyle';
+
+            const spawnY = type === 'gargoyle' ? groundY - 220 : groundY - 60;
+            enemies.push(new Enemy(spawnX, spawnY, type));
+        }
+    }
+
+    return levelWidth;
+}
+
+let currentLevelWidth = 3200;
+
+// --- CLASSE JOGADOR (SHINOBI) ---
+class Player {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.w = 28;
+        this.h = 48;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 5.5;
+        this.gravity = 0.55;
+
+        this.maxHp = 100;
+        this.hp = 100;
+        this.maxMana = 100;
+        this.mana = 100;
+        this.manaRegenRate = 6; // Mana por segundo
+
+        this.grounded = false;
+        this.jumpsLeft = 2;
+        this.facing = 1; // 1: direita, -1: esquerda
+
+        // Combate & Habilidades
+        this.katanaDamage = 30;
+        this.isAttacking = false;
+        this.attackTimer = 0;
+
+        this.isDashing = false;
+        this.dashTimer = 0;
+        this.dashCooldown = 0;
+        this.dashCooldownMax = 1.2; // segundos
+
+        this.invulnerableTime = 0;
+    }
+
+    update(dt) {
+        // Mana regen
+        this.mana = Math.min(this.maxMana, this.mana + this.manaRegenRate * dt);
+
+        if (this.invulnerableTime > 0) this.invulnerableTime -= dt;
+        if (this.dashCooldown > 0) this.dashCooldown -= dt;
+
+        // Atualização do Dash
+        if (this.isDashing) {
+            this.vx = this.facing * 16;
+            this.vy = 0;
+            this.dashTimer -= dt;
+            if (this.dashTimer <= 0) {
+                this.isDashing = false;
+            }
+        } else {
+            // Controles Normais
+            let moveDir = 0;
+            if (keys['KeyA'] || keys['ArrowLeft'] || mobileInputs.left) moveDir -= 1;
+            if (keys['KeyD'] || keys['ArrowRight'] || mobileInputs.right) moveDir += 1;
+
+            if (moveDir !== 0) {
+                this.vx = moveDir * this.speed;
+                this.facing = moveDir;
+            } else {
+                this.vx *= 0.7; // Fricção
+            }
+
+            // Aplicar Gravidade
+            this.vy += this.gravity;
+        }
+
+        // Movimento Horizontal e Colisão
+        this.x += this.vx;
+        this.x = Math.max(20, Math.min(currentLevelWidth - 50, this.x));
+
+        // Movimento Vertical e Colisão com Plataformas
+        this.y += this.vy;
+        this.grounded = false;
+
+        for (let p of platforms) {
+            if (p.type === 'exit') continue;
+            if (this.x + this.w / 2 > p.x && this.x - this.w / 2 < p.x + p.w) {
+                if (this.vy >= 0 && this.y + this.h >= p.y && this.y + this.h - this.vy <= p.y + 12) {
+                    this.y = p.y - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                    this.jumpsLeft = 2;
+                }
+            }
+        }
+
+        // Ataque de Katana Timer
+        if (this.isAttacking) {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) this.isAttacking = false;
+        }
+
+        // Rastro de partículas no Dash
+        if (this.isDashing) {
+            particles.push(new Particle(this.x, this.y + this.h / 2, 0, 0, '#00d2ff', 4, 0.25));
+        }
+    }
+
+    jump() {
+        if (this.jumpsLeft > 0) {
+            this.vy = -12;
+            this.jumpsLeft--;
+            AudioEngine.jump();
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(this.x, this.y + this.h, (Math.random() - 0.5) * 3, 1, '#ffffff', 2, 0.2));
+            }
+        }
+    }
+
+    dash() {
+        if (this.dashCooldown <= 0 && !this.isDashing) {
+            this.isDashing = true;
+            this.dashTimer = 0.22; // Duração do dash
+            this.dashCooldown = this.dashCooldownMax;
+            this.invulnerableTime = 0.25;
+            AudioEngine.dash();
+        }
+    }
+
+    attack() {
+        if (this.isAttacking) return;
+        this.isAttacking = true;
+        this.attackTimer = 0.2;
+        AudioEngine.swordSlash();
+
+        // Hitbox do Ataque
+        const range = 50;
+        const hitX = this.facing > 0 ? this.x : this.x - range;
+        const hitBox = { x: hitX, y: this.y - 10, w: range + this.w, h: this.h + 20 };
+
+        enemies.forEach(e => {
+            if (e.x + e.w > hitBox.x && e.x < hitBox.x + hitBox.w &&
+                e.y + e.h > hitBox.y && e.y < hitBox.y + hitBox.h) {
+                
+                // Checar bloqueio de escudo frontal
+                if (e.type === 'shield' && e.facing !== this.facing) {
+                    floatingTexts.push(new FloatingText(e.x, e.y - 10, 'BLOQUEADO!', '#aaa'));
+                    AudioEngine.hit();
+                } else {
+                    e.takeDamage(this.katanaDamage);
+                    e.vx = this.facing * 5; // Repulsão (Knockback)
+                }
+            }
+        });
+    }
+
+    throwShuriken() {
+        if (this.mana >= 20) {
+            this.mana -= 20;
+            AudioEngine.shuriken();
+            projectiles.push(new Projectile(
+                this.x + (this.facing > 0 ? this.w : 0),
+                this.y + this.h / 2,
+                this.facing * 12, 0,
+                this.katanaDamage * 0.7, 'player', 'shuriken'
+            ));
+        }
+    }
+
+    castMagic() {
+        if (this.mana >= 50) {
+            this.mana -= 50;
+            AudioEngine.fireMagic();
+            addCameraShake(10, 0.3);
+
+            // Dragão de Fogo que avança destruindo
+            projectiles.push(new Projectile(
+                this.x + (this.facing > 0 ? this.w : 0),
+                this.y - 10,
+                this.facing * 9, 0,
+                this.katanaDamage * 2.2, 'player', 'dragon'
+            ));
+        }
+    }
+
+    takeDamage(amount) {
+        if (this.invulnerableTime > 0 || this.isDashing) return;
+
+        AudioEngine.hit();
+        addCameraShake(8, 0.2);
+        this.hp -= amount;
+        this.invulnerableTime = 0.6; // Tempo de imunidade pós-dano
+        floatingTexts.push(new FloatingText(this.x, this.y - 15, `-${Math.round(amount)}`, '#ff2a55'));
+
+        if (this.hp <= 0) {
+            this.hp = 0;
+            gameOver();
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+
+        // Flash de imunidade
+        if (this.invulnerableTime > 0 && Math.floor(Date.now() / 60) % 2 === 0) {
+            ctx.globalAlpha = 0.4;
+        }
+
+        // Rotação/Flip por direção
+        if (this.facing < 0) {
+            ctx.translate(this.w, 0);
+            ctx.scale(-1, 1);
+        }
+
+        // Desenhar Capa / Roupas
+        ctx.fillStyle = this.isDashing ? '#00d2ff' : '#ff2a55';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = ctx.fillStyle;
+
+        // Capa esvoaçante
+        ctx.beginPath();
+        ctx.moveTo(0, 10);
+        ctx.lineTo(-12, this.h - 5);
+        ctx.lineTo(8, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // Corpo do Shinobi (Silhueta Obscura)
+        ctx.fillStyle = '#110a1c';
+        ctx.fillRect(0, 0, this.w, this.h);
+
+        // Olhar Shinobi Brilhante
+        ctx.fillStyle = '#00d2ff';
+        ctx.fillRect(this.w - 10, 8, 6, 3);
+
+        // Animação de Corte de Katana
+        if (this.attackTimer > 0) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff2a55';
+            ctx.beginPath();
+            ctx.arc(this.w / 2, this.h / 2, 42, -Math.PI / 3, Math.PI / 3);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}
+
+// --- CLASSE INIMIGO ---
+class Enemy {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'skeleton', 'archer', 'gargoyle', 'shield', 'boss'
+        this.vx = 0;
+        this.vy = 0;
+        this.facing = -1;
+        this.dead = false;
+
+        if (type === 'skeleton') {
+            this.w = 26; this.h = 44;
+            this.hp = 50 + stage * 15;
+            this.speed = 2.2;
+            this.damage = 15;
+            this.soulsValue = 8;
+            this.color = '#e0e0e0';
+        } else if (type === 'archer') {
+            this.w = 26; this.h = 44;
+            this.hp = 40 + stage * 10;
+            this.speed = 1.4;
+            this.damage = 12;
+            this.soulsValue = 12;
+            this.color = '#ffaa00';
+            this.lastShotTime = Date.now();
+        } else if (type === 'gargoyle') {
+            this.w = 32; this.h = 32;
+            this.hp = 35 + stage * 10;
+            this.speed = 2.8;
+            this.damage = 18;
+            this.soulsValue = 15;
+            this.color = '#9900ff';
+        } else if (type === 'shield') {
+            this.w = 32; this.h = 48;
+            this.hp = 90 + stage * 25;
+            this.speed = 1.2;
+            this.damage = 22;
+            this.soulsValue = 20;
+            this.color = '#8888aa';
+        } else if (type === 'boss') {
+            this.w = 60; this.h = 90;
+            this.hp = 800;
+            this.maxHp = 800;
+            this.speed = 2.0;
+            this.damage = 30;
+            this.soulsValue = 200;
+            this.color = '#ff2a55';
+            this.lastAttackTime = Date.now();
+        }
+
+        this.maxHp = this.hp;
+    }
+
+    update(dt) {
+        const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+        this.facing = player.x > this.x ? 1 : -1;
+
+        if (this.type === 'skeleton' || this.type === 'shield') {
+            if (distToPlayer < 450) {
+                this.vx = this.facing * this.speed;
+            }
+            this.vy += 0.5; // Gravidade
+        } else if (this.type === 'archer') {
+            if (distToPlayer < 400 && distToPlayer > 200) {
+                this.vx = this.facing * this.speed;
+            } else if (distToPlayer <= 200) {
+                this.vx = -this.facing * this.speed; // Fugir do jogador
+            }
+            this.vy += 0.5;
+
+            // Atirar Flechas
+            if (Date.now() - this.lastShotTime > 2500 && distToPlayer < 500) {
+                projectiles.push(new Projectile(
+                    this.x + this.w / 2, this.y + 15,
+                    this.facing * 7, 0,
+                    this.damage, 'enemy', 'arrow'
+                ));
+                this.lastShotTime = Date.now();
+            }
+        } else if (this.type === 'gargoyle') {
+            // Voo estilo senoide
+            if (distToPlayer < 500) {
+                this.vx = this.facing * this.speed;
+                this.vy = Math.sin(gameTime * 4) * 2 + (player.y - this.y) * 0.02;
+            }
+        } else if (this.type === 'boss') {
+            if (distToPlayer < 600) {
+                this.vx = this.facing * this.speed;
+            }
+            this.vy += 0.5;
+
+            // Padrões de Ataque do Chefe
+            if (Date.now() - this.lastAttackTime > 2000) {
+                const r = Math.random();
+                if (r < 0.5) {
+                    // Bola de Fogo Sombria
+                    projectiles.push(new Projectile(
+                        this.x + this.w / 2, this.y + 20,
+                        this.facing * 8, 0,
+                        20, 'enemy', 'bossfire'
+                    ));
+                } else {
+                    // Choque de espinhos no chão
+                    addCameraShake(12, 0.4);
+                    AudioEngine.bossRoar();
+                    if (distToPlayer < 250 && player.grounded) {
+                        player.takeDamage(this.damage);
+                    }
+                }
+                this.lastAttackTime = Date.now();
+            }
+        }
+
+        // Aplicar Movimento e Colisão
+        this.x += this.vx;
+        this.y += this.vy;
+
+        for (let p of platforms) {
+            if (this.x + this.w > p.x && this.x < p.x + p.w) {
+                if (this.vy >= 0 && this.y + this.h >= p.y && this.y + this.h - this.vy <= p.y + 12) {
+                    this.y = p.y - this.h;
+                    this.vy = 0;
+                }
+            }
+        }
+
+        // Colisão com Jogador
+        if (player.x + player.w > this.x && player.x < this.x + this.w &&
+            player.y + player.h > this.y && player.y < this.y + this.h) {
+            player.takeDamage(this.damage);
+        }
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        floatingTexts.push(new FloatingText(this.x + this.w / 2, this.y - 10, Math.round(amount), '#ffffff'));
+
+        for (let i = 0; i < 4; i++) {
+            particles.push(new Particle(
+                this.x + this.w / 2, this.y + this.h / 2,
+                (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6,
+                this.color, 3, 0.3
+            ));
+        }
+
+        if (this.hp <= 0 && !this.dead) {
+            this.dead = true;
+            this.onDeath();
+        }
+    }
+
+    onDeath() {
+        AudioEngine.enemyDeath();
+        killsCount++;
+        totalSouls += this.soulsValue;
+
+        // Liberar Orbes de Alma
+        const orbCount = Math.min(8, Math.ceil(this.soulsValue / 3));
+        for (let i = 0; i < orbCount; i++) {
+            soulsOrbs.push(new SoulOrb(
+                this.x + Math.random() * this.w,
+                this.y + Math.random() * this.h,
+                Math.ceil(this.soulsValue / orbCount)
+            ));
+        }
+
+        if (this.type === 'boss') {
+            setTimeout(victory, 1000);
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+
+        if (this.type === 'skeleton') {
+            ctx.fillRect(0, 0, this.w, this.h);
+            // Olhos Vermelhos
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(this.facing > 0 ? this.w - 6 : 2, 8, 4, 4);
+        } else if (this.type === 'shield') {
+            ctx.fillRect(0, 0, this.w, this.h);
+            // Escudo de Ferro
+            ctx.fillStyle = '#444466';
+            const shieldX = this.facing > 0 ? this.w - 6 : -4;
+            ctx.fillRect(shieldX, 4, 10, this.h - 8);
+        } else if (this.type === 'boss') {
+            ctx.fillStyle = '#220033';
+            ctx.fillRect(0, 0, this.w, this.h);
+            ctx.strokeStyle = '#ff2a55';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, this.w, this.h);
+
+            // Chifres do Demônio
+            ctx.fillStyle = '#ff2a55';
+            ctx.beginPath();
+            ctx.moveTo(5, 0); ctx.lineTo(-10, -20); ctx.lineTo(15, 0);
+            ctx.moveTo(this.w - 5, 0); ctx.lineTo(this.w + 10, -20); ctx.lineTo(this.w - 15, 0);
+            ctx.fill();
+        } else {
+            ctx.fillRect(0, 0, this.w, this.h);
+        }
+
+        // Barra de Vida acima do inimigo
+        if (this.hp < this.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, -10, this.w, 4);
+            ctx.fillStyle = '#ff2a55';
+            ctx.fillRect(0, -10, this.w * (this.hp / this.maxHp), 4);
+        }
+
+        ctx.restore();
+    }
+}
+
+// --- CLASSE PROJÉTIL ---
+class Projectile {
+    constructor(x, y, vx, vy, damage, owner, type) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.damage = damage;
+        this.owner = owner; // 'player' ou 'enemy'
+        this.type = type;   // 'shuriken', 'dragon', 'arrow', 'bossfire'
+        this.dead = false;
+        this.radius = type === 'dragon' ? 22 : 6;
+    }
+
+    update(dt) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Partículas de rastro
+        if (Math.random() < 0.5) {
+            const color = this.type === 'dragon' ? '#ffaa00' : (this.type === 'shuriken' ? '#00d2ff' : '#ff0055');
+            particles.push(new Particle(this.x, this.y, 0, 0, color, 3, 0.2));
+        }
+
+        // Testar Colisões
+        if (this.owner === 'player') {
+            enemies.forEach(e => {
+                if (this.x > e.x && this.x < e.x + e.w && this.y > e.y && this.y < e.y + e.h) {
+                    e.takeDamage(this.damage);
+                    if (this.type !== 'dragon') this.dead = true;
+                }
+            });
+        } else {
+            if (this.x > player.x && this.x < player.x + player.w &&
+                this.y > player.y && this.y < player.y + player.h) {
+                player.takeDamage(this.damage);
+                this.dead = true;
+            }
+        }
+
+        if (this.x < camera.x - 100 || this.x > camera.x + width + 100) this.dead = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+
+        if (this.type === 'shuriken') {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#00d2ff';
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.type === 'dragon') {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ffaa00';
+            ctx.fillStyle = '#ffaa00';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ff2a55';
+            ctx.fillStyle = '#ff2a55';
+            ctx.fillRect(-this.radius, -2, this.radius * 2, 4);
+        }
+
+        ctx.restore();
+    }
+}
+
+// --- CLASSE ORBE DE ALMA ---
+class SoulOrb {
+    constructor(x, y, value) {
+        this.x = x;
+        this.y = y;
+        this.value = value;
+        this.radius = 5;
+        this.dead = false;
+    }
+
+    update() {
+        const dist = Math.hypot(player.x - this.x, player.y - this.y);
+        if (dist < 140) {
+            this.x += (player.x - this.x) * 0.1;
+            this.y += (player.y - this.y) * 0.1;
+        }
+
+        if (dist < 25) {
+            AudioEngine.soulPickup();
+            totalSouls += this.value;
+            this.dead = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ffaa00';
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+// --- CLASSE PARTÍCULA ---
+class Particle {
+    constructor(x, y, vx, vy, color, size = 3, life = 0.4) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.size = size;
+        this.maxLife = life;
+        this.life = life;
+        this.dead = false;
+    }
+
+    update(dt) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= dt;
+        if (this.life <= 0) this.dead = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        ctx.restore();
+    }
+}
+
+// --- TEXTO FLUTUANTE ---
+class FloatingText {
+    constructor(x, y, text, color = '#fff') {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 0.7;
+        this.dead = false;
+    }
+
+    update(dt) {
+        this.y -= 25 * dt;
+        this.life -= dt;
+        if (this.life <= 0) this.dead = true;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+        ctx.globalAlpha = Math.max(0, this.life / 0.7);
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = this.color;
+        ctx.fillText(this.text, 0, 0);
+        ctx.restore();
+    }
+}
+
+// --- TREMOR DE CÂMERA ---
+function addCameraShake(intensity, duration) {
+    camera.shakeIntensity = intensity;
+    camera.shakeDuration = duration;
+}
+
+function updateCameraShake(dt) {
+    if (camera.shakeDuration > 0) {
+        camera.shakeDuration -= dt;
+        camera.shakeX = (Math.random() - 0.5) * camera.shakeIntensity;
+        camera.shakeY = (Math.random() - 0.5) * camera.shakeIntensity;
+    } else {
+        camera.shakeX = 0;
+        camera.shakeY = 0;
+    }
+}
+
+// --- MUDANÇA DE FASE E LOJA ---
+function checkStageExit() {
+    const exitPlat = platforms.find(p => p.type === 'exit');
+    if (exitPlat && player.x > exitPlat.x) {
+        if (stage < 5) {
+            openShop();
+        } else {
+            victory();
+        }
+    }
+}
+
+function openShop() {
+    gameState = 'SHOP';
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('shop-souls-count').textContent = totalSouls;
+
+    const listEl = document.getElementById('shop-cards-list');
+    listEl.innerHTML = '';
+
+    UPGRADES.forEach(upg => {
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+        card.innerHTML = `
+            <div class="icon">${upg.icon}</div>
+            <div class="title">${upg.title}</div>
+            <div class="desc">${upg.desc}</div>
+            <div class="price">🔮 ${upg.cost} Almas</div>
+            <button class="btn" style="padding: 8px 18px; font-size: 0.9rem;">COMPRAR</button>
+        `;
+        card.querySelector('button').onclick = () => {
+            if (totalSouls >= upg.cost) {
+                totalSouls -= upg.cost;
+                upg.apply(player);
+                upg.cost = Math.round(upg.cost * 1.4); // Aumentar preço
+                document.getElementById('shop-souls-count').textContent = totalSouls;
+                card.querySelector('.price').textContent = `🔮 ${upg.cost} Almas`;
+                AudioEngine.soulPickup();
+            }
+        };
+        listEl.appendChild(card);
+    });
+
+    document.getElementById('screen-shop').classList.remove('hidden');
+}
+
+document.getElementById('btn-next-stage').onclick = () => {
+    stage++;
+    document.getElementById('screen-shop').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('hud-stage').textContent = `FASE ${stage}`;
+
+    currentLevelWidth = generateLevel(stage);
+    player.x = 100;
+    player.y = height - 150;
+    gameState = 'GAME';
+};
+
+// --- CONTROLE DA JORNADA ---
+function initGame() {
+    resizeCanvas();
+    stage = 1;
+    totalSouls = 0;
+    killsCount = 0;
+
+    currentLevelWidth = generateLevel(stage);
+
+    player = new Player(100, height - 150);
+
+    gameState = 'GAME';
+    document.getElementById('hud-stage').textContent = 'FASE 1';
+    document.getElementById('screen-main').classList.add('hidden');
+    document.getElementById('screen-gameover').classList.add('hidden');
+    document.getElementById('screen-victory').classList.add('hidden');
+    document.getElementById('screen-pause').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+}
+
+function gameOver() {
+    gameState = 'GAME_OVER';
+
+    if (totalSouls > bestSouls) {
+        bestSouls = totalSouls;
+        localStorage.setItem('kage_bestsouls', bestSouls);
+    }
+    if (stage > bestStage) {
+        bestStage = stage;
+        localStorage.setItem('kage_beststage', bestStage);
+    }
+
+    document.getElementById('go-stage').textContent = stage;
+    document.getElementById('go-kills').textContent = killsCount;
+
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('screen-gameover').classList.remove('hidden');
+}
+
+function victory() {
+    gameState = 'VICTORY';
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('screen-victory').classList.remove('hidden');
+}
+
+// --- GAME LOOP ---
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+
+    if (gameState === 'GAME') {
+        updateGame(dt);
+    }
+
+    renderGame();
+    requestAnimationFrame(gameLoop);
+}
+
+function updateGame(dt) {
+    gameTime += dt;
+    updateCameraShake(dt);
+
+    // Câmera Acompanha o Jogador
+    const targetCamX = player.x - width * 0.35;
+    camera.x += (targetCamX - camera.x) * 0.08;
+    camera.x = Math.max(0, Math.min(currentLevelWidth - width, camera.x));
+
+    player.update(dt);
+
+    // Atualizar Entidades
+    enemies.forEach(e => e.update(dt));
+    enemies = enemies.filter(e => !e.dead);
+
+    projectiles.forEach(p => p.update(dt));
+    projectiles = projectiles.filter(p => !p.dead);
+
+    soulsOrbs.forEach(s => s.update());
+    soulsOrbs = soulsOrbs.filter(s => !s.dead);
+
+    particles.forEach(p => p.update(dt));
+    particles = particles.filter(p => !p.dead);
+
+    floatingTexts.forEach(t => t.update(dt));
+    floatingTexts = floatingTexts.filter(t => !t.dead);
+
+    checkStageExit();
+
+    // Atualizar HUD
+    document.getElementById('hp-fill').style.width = `${(player.hp / player.maxHp) * 100}%`;
+    document.getElementById('mana-fill').style.width = `${(player.mana / player.maxMana) * 100}%`;
+    document.getElementById('hud-souls').textContent = `🔮 ${totalSouls}`;
+
+    if (currentBoss && !currentBoss.dead) {
+        document.getElementById('boss-hp-fill').style.width = `${Math.max(0, (currentBoss.hp / currentBoss.maxHp) * 100)}%`;
+    }
+}
+
+function renderGame() {
+    ctx.save();
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.translate(camera.shakeX, camera.shakeY);
+
+    // Cenário Paralaxe (Lua de Sangue e Montanhas)
+    drawBackground();
+
+    if (gameState === 'GAME' || gameState === 'SHOP' || gameState === 'PAUSE') {
+        // Renderizar Plataformas
+        platforms.forEach(p => {
+            ctx.save();
+            ctx.translate(p.x - camera.x, p.y - camera.y);
+
+            if (p.type === 'ground') {
+                ctx.fillStyle = '#160a24';
+                ctx.fillRect(0, 0, p.w, p.h);
+                ctx.fillStyle = '#ff2a55';
+                ctx.fillRect(0, 0, p.w, 4); // Borda superior brilhante
+            } else if (p.type === 'floating') {
+                ctx.fillStyle = '#221038';
+                ctx.fillRect(0, 0, p.w, p.h);
+                ctx.strokeStyle = '#9900ff';
+                ctx.strokeRect(0, 0, p.w, p.h);
+            } else if (p.type === 'exit') {
+                // Portal de Fim de Fase
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ff2a55';
+                ctx.fillStyle = '#ff2a55';
+                ctx.fillRect(0, 0, p.w, p.h);
+            }
+            ctx.restore();
+        });
+
+        // Desenhar Entidades
+        soulsOrbs.forEach(s => s.draw());
+        enemies.forEach(e => e.draw());
+        projectiles.forEach(p => p.draw());
+        particles.forEach(p => p.draw());
+        player.draw();
+        floatingTexts.forEach(t => t.draw());
+    }
+
+    ctx.restore();
+}
+
+function drawBackground() {
+    // Céu Noturno Noturno
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, '#10051a');
+    grad.addColorStop(1, '#05020a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Lua de Sangue
+    ctx.save();
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = '#ff2a55';
+    ctx.fillStyle = '#ff2a55';
+    ctx.beginPath();
+    ctx.arc(width * 0.75 - camera.x * 0.05, 120, 55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Silhueta de Montanhas (Camada de Paralaxe)
+    ctx.fillStyle = '#0a0312';
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    for (let x = 0; x <= width; x += 100) {
+        const mountainY = height - 180 - Math.sin((x + camera.x * 0.15) * 0.005) * 60;
+        ctx.lineTo(x, mountainY);
+    }
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// --- REDIMENSIONAMENTO ---
+function resizeCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+// --- CONTROLES TECLADO E MOUSE ---
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+
+    if (gameState === 'GAME') {
+        if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') player.jump();
+        if (e.code === 'KeyK' || e.code === 'ShiftLeft') player.dash();
+        if (e.code === 'KeyJ') player.attack();
+        if (e.code === 'KeyL') player.throwShuriken();
+        if (e.code === 'KeyE' || e.code === 'KeyI') player.castMagic();
+    }
+
+    if (e.code === 'KeyP' || e.code === 'Escape') {
+        if (gameState === 'GAME') {
+            gameState = 'PAUSE';
+            document.getElementById('screen-pause').classList.remove('hidden');
+        } else if (gameState === 'PAUSE') {
+            gameState = 'GAME';
+            document.getElementById('screen-pause').classList.add('hidden');
+        }
+    }
+});
+
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+window.addEventListener('mousedown', e => {
+    AudioEngine.init();
+    if (gameState === 'GAME') {
+        if (e.button === 0) player.attack();
+        if (e.button === 2) player.throwShuriken();
+    }
+});
+
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+// --- CONTROLES MOBILE TOUCH ---
+const mobileInputs = { left: false, right: false };
+
+function setupTouchBtn(id, onPress, onRelease) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchstart', e => {
+        e.preventDefault();
+        AudioEngine.init();
+        onPress();
+    });
+    el.addEventListener('touchend', e => {
+        e.preventDefault();
+        if (onRelease) onRelease();
+    });
+}
+
+setupTouchBtn('mb-left', () => mobileInputs.left = true, () => mobileInputs.left = false);
+setupTouchBtn('mb-right', () => mobileInputs.right = true, () => mobileInputs.right = false);
+setupTouchBtn('mb-jump', () => { if (gameState === 'GAME') player.jump(); });
+setupTouchBtn('mb-attack', () => { if (gameState === 'GAME') player.attack(); });
+setupTouchBtn('mb-dash', () => { if (gameState === 'GAME') player.dash(); });
+setupTouchBtn('mb-magic', () => { if (gameState === 'GAME') player.castMagic(); });
+
+// --- EVENTOS DE BOTÕES ---
+document.getElementById('btn-start').onclick = () => { AudioEngine.init(); initGame(); };
+document.getElementById('btn-restart').onclick = () => initGame();
+document.getElementById('btn-restart-pause').onclick = () => initGame();
+document.getElementById('btn-victory-restart').onclick = () => initGame();
+document.getElementById('btn-resume').onclick = () => {
+    gameState = 'GAME';
+    document.getElementById('screen-pause').classList.add('hidden');
+};
+
+// Inicialização
+resizeCanvas();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
